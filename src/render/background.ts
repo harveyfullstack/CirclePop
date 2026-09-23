@@ -120,7 +120,7 @@ export class Background {
 
     this.drawDeco(ctx, s, time, dt, st, add);
 
-    // Beat rings radiating from the centre.
+    // Beat rings radiating from the center.
     if (st.pulse) {
       const p = st.beatPhase;
       const rr = (0.12 + 0.88 * p) * Math.max(w, h) * 0.72;
@@ -133,7 +133,7 @@ export class Background {
       ctx.stroke();
     }
 
-    // FEVER: hyperspace streaks + colour wash.
+    // FEVER: hyperspace streaks + color wash.
     const warpTarget = st.fever > 0.05 ? 1 : 0;
     this.warpSpeed += (warpTarget - this.warpSpeed) * Math.min(1, dt * (warpTarget ? 3 : 6));
     if (this.warpSpeed > 0.02) {

@@ -8,7 +8,7 @@ import { env, midiHz, noise, osc, playVoice } from './voices';
 const LADDER = [64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93];
 const TOP = [91, 93, 96, 93];
 
-/** Every sound in the game is synthesised here (plus three samples from the 2020 original). */
+/** Every sound in the game is synthesized here (plus three samples from the 2020 original). */
 export class Sfx {
   voice: Voice = 'pop';
 

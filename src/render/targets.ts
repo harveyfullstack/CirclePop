@@ -18,8 +18,8 @@ export interface TargetView {
 
 type Ctx = CanvasRenderingContext2D;
 
-/** Colours for a poppable target in the current skin (gold and rainbow override the skin). */
-function colours(t: Target, skin: Skin, time: number): [string, string] {
+/** Colors for a poppable target in the current skin (gold and rainbow override the skin). */
+function targetColors(t: Target, skin: Skin, time: number): [string, string] {
   if (t.kind === 'gold') return skin.light ? [GOLD.b, '#E07B00'] : [GOLD.a, GOLD.b];
   if (skin.rainbow) {
     const h = time * 90 + t.seed * 57;
@@ -58,7 +58,7 @@ function drawOne(ctx: Ctx, t: Target, skin: Skin, v: TargetView): void {
     return;
   }
   const R = t.r * scale * (0.93 + 0.07 * v.beat);
-  const [a, b] = colours(t, skin, v.time);
+  const [a, b] = targetColors(t, skin, v.time);
   if (t.kind === 'gold') drawRays(ctx, t.x, t.y, R, v.time, skin.light);
   drawRing(ctx, skin.style, t.x, t.y, R, a, b, v.time * 1.7 + t.seed, skin.light, alpha);
   if (t.kind === 'gold') drawSparkles(ctx, t, R, v.time, skin.light);

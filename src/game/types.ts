@@ -26,7 +26,7 @@ export interface Target {
   seed: number;
 }
 
-/** Playable area in CSS pixels. Target centres are kept inside the rect (minus their radius). */
+/** Playable area in CSS pixels. Target centers are kept inside the rect (minus their radius). */
 export interface Field {
   w: number;
   h: number;

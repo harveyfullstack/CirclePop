@@ -433,7 +433,7 @@ export class App {
     } else if (this.mode === 'zen') {
       modeInfo = 'No timer. No game over. Just pop.';
     } else {
-      modeInfo = 'Pop fast · hit the centre · never miss';
+      modeInfo = 'Pop fast · hit the center · never miss';
     }
     const affordable = SKINS.some((s) => !save.owned.includes(s.id) && s.unlock.kind === 'coins' && save.coins >= s.unlock.price);
     const giftReady = save.gift.last !== today;
@@ -581,7 +581,7 @@ export class App {
     if (t.kind === 'bomb') this.showTipNear('bomb', 'Never tap the bombs!', t, 1.3, DANGER);
     else if (t.kind === 'power') this.showTipNear('power', 'Grab the power-up!', t, 0.9, POWER_COLORS[t.power ?? 'shield']);
     else if (t.kind === 'gold') this.showTipNear('gold', 'GOLD: 5× points + coins', t, 0, GOLD.b);
-    else if (t.main && s.pops === 1 && s.mode !== 'zen') this.showTipNear('perfect', 'Hit the CENTRE for PERFECT', t);
+    else if (t.main && s.pops === 1 && s.mode !== 'zen') this.showTipNear('perfect', 'Hit the CENTER for PERFECT', t);
   }
 
   private showTip(id: string, text: string, x: number, y: number, slow = 0, color?: string): boolean {
@@ -744,7 +744,7 @@ export class App {
     if (rec.isBest && rec.prevBest > 0) nudge = `+${fmt(r.score - rec.prevBest)} over your old best`;
     else if (!rec.isBest && best > 0 && r.score >= best * 0.72 && s.mode !== 'zen') nudge = `So close! ${fmt(best - r.score + 1)} more to beat your best`;
     else if (s.mode === 'daily') nudge = `🔥 Daily streak: ${this.save.daily.streak} day${this.save.daily.streak === 1 ? '' : 's'}`;
-    else if (!rec.isBest && r.pops > 0 && s.mode !== 'zen') nudge = r.perfects / r.pops < 0.4 ? 'Tip: aim for the centre to build a multiplier' : 'Tip: fill FEVER for double points';
+    else if (!rec.isBest && r.pops > 0 && s.mode !== 'zen') nudge = r.perfects / r.pops < 0.4 ? 'Tip: aim for the center to build a multiplier' : 'Tip: fill FEVER for double points';
     this.phase = 'results';
     this.ui.showResults({
       mode: s.mode,

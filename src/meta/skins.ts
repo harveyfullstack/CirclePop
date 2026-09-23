@@ -20,15 +20,15 @@ export interface Skin {
   b: string;
   /** Background gradient, top → bottom. */
   bg: [string, string];
-  /** Soft moving colour blobs behind everything. */
+  /** Soft moving color blobs behind everything. */
   aurora: [string, string, string];
   particles: string[];
-  /** HUD / text colour. */
+  /** HUD / text color. */
   text: string;
   /** Light backgrounds use normal blending instead of additive glow. */
   light: boolean;
   rainbow?: boolean;
-  /** Timer arc colour (defaults to `a`). */
+  /** Timer arc color (defaults to `a`). */
   timer?: string;
   unlock: Unlock;
 }
@@ -182,7 +182,7 @@ export const SKINS: readonly Skin[] = [
   {
     id: 'prism',
     name: 'Prism',
-    tagline: 'All the colours at once',
+    tagline: 'All the colors at once',
     style: 'neon',
     voice: 'pop',
     deco: 'stars',

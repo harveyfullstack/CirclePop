@@ -18,7 +18,7 @@ const ringCache = new Map<string, HTMLCanvasElement>();
 const blobCache = new Map<string, HTMLCanvasElement>();
 const pixelCache = new Map<string, HTMLCanvasElement>();
 
-/** Soft dot with a hot centre. Draw it at 2 × radius. */
+/** Soft dot with a hot center. Draw it at 2 × radius. */
 export function glowSprite(color: string): HTMLCanvasElement {
   let c = glowCache.get(color);
   if (!c) {
@@ -58,7 +58,7 @@ export function ringGlowSprite(color: string): HTMLCanvasElement {
   return c;
 }
 
-/** Big soft colour blob used for the aurora background. */
+/** Big soft color blob used for the aurora background. */
 export function blobSprite(color: string): HTMLCanvasElement {
   let c = blobCache.get(color);
   if (!c) {

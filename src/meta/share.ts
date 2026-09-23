@@ -20,7 +20,7 @@ export interface ShareInfo {
   skin: Skin;
 }
 
-/** Wordle-style run summary: 10 segments coloured by how clean they were. */
+/** Wordle-style run summary: 10 segments colored by how clean they were. */
 export function emojiRow(history: string): string {
   if (!history) return '';
   const n = Math.min(10, history.length);

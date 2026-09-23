@@ -10,7 +10,7 @@ The 2020 original was one blue ring on a white screen: tap it before the red bar
 
 | | |
 |---|---|
-| **Perfect hits** | Hit the centre for a PERFECT. Every perfect in a row climbs a musical scale, so a streak plays a melody. Every third one bumps the multiplier, up to **×8**. |
+| **Perfect hits** | Hit the center for a PERFECT. Every perfect in a row climbs a musical scale, so a streak plays a melody. Every third one bumps the multiplier, up to **×8**. |
 | **FEVER** | Perfects fill the FEVER meter. When it's full you get warp-speed visuals, the music drops, two circles at once, double points, and no penalty for misses. |
 | **Threats and treats** | Bombs you must not touch, gold circles (5× points and coins), moving circles, and power-ups: 🛡 Shield, ⏳ Slow-mo, ✖2 Double. Each is introduced gradually with a one-time tip. |
 | **Juice** | Particles, shockwaves, screen shake, hit flashes, slow-mo on death, confetti on a new best, haptics (native iOS/Android, plus the iOS 18 Safari switch trick). |

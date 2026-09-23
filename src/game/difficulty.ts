@@ -43,7 +43,7 @@ export const ZEN_TUNING: Tuning = { ...BASE_TUNING, sizeScale: 1.08, moveRate: 0
 
 export const FEVER_DURATION = 6.5;
 export const MAX_MULT = 8;
-/** Fraction of the radius that counts as a PERFECT (centre) hit. */
+/** Fraction of the radius that counts as a PERFECT (center) hit. */
 export const PERFECT_FRAC = 0.42;
 export const POWER_START = 10;
 export const POWER_CHANCE = 0.075;
