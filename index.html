@@ -1,27 +1,184 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height" />
-    <title>Game</title>
-    <link rel="stylesheet" type="text/css" href="styles.css">
-    <script type="text/javascript" src="pixi.min.js"></script>
-    <script type="text/javascript" src="timer.min.js"></script>
-    <script type="text/javascript" src="fontfaceobserver.js"></script>
-    <script type="text/javascript" src="howler.min.js"></script>
-    <script type="text/javascript" src="Tween.min.js"></script>
-    <script type="text/javascript" src="js/lib/tools.js"></script>
-    <script type="text/javascript" src="js/lib/Game.js"></script>
-    <script type="text/javascript" src="js/lib/StateManager.js"></script>
-    <script type="text/javascript" src="js/lib/GlobalLoader.js"></script>
-    <script type="text/javascript" src="js/lib/addSprite.js"></script>
-    <script type="text/javascript" src="js/lib/addText.js"></script>
-    <script type="text/javascript" src="js/load.js"></script>
-    <script type="text/javascript" src="js/play.js"></script>
-    <script type="text/javascript" src="js/init.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0822" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="CirclePop" />
+    <meta name="description" content="Pop the circle. Chase the perfect streak. Hit FEVER. The one-tap game you can't put down." />
+    <meta property="og:title" content="CirclePop" />
+    <meta property="og:description" content="Pop the circle. Chase the perfect streak. Hit FEVER." />
+    <meta property="og:image" content="./icons/og.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="./icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <title>CirclePop</title>
   </head>
   <body>
-    <div class="fontPre" style="position:absolute;left:-100px;">.</div>
-    <canvas id="pCanvas"></canvas>
+    <canvas id="game" aria-label="CirclePop playfield"></canvas>
+
+    <div id="ui">
+      <!-- HOME -->
+      <section id="home" class="screen">
+        <header class="topbar">
+          <button id="home-coins" class="pill coins-pill" aria-label="Coins"><i class="coin"></i><b class="coins-val">0</b></button>
+          <div class="topbar-right">
+            <button id="btn-help" class="icon-btn" data-icon="help" aria-label="How to play"></button>
+            <button id="btn-settings" class="icon-btn" data-icon="settings" aria-label="Settings"></button>
+          </div>
+        </header>
+        <h1 class="logo" aria-label="CirclePop"><span class="logo-text">circlep</span><span class="logo-o" aria-hidden="true"></span><span class="logo-text">p</span></h1>
+        <p id="home-best" class="home-best"></p>
+        <p id="home-note" class="home-note"></p>
+        <div id="tap-label" class="tap-label">TAP TO PLAY</div>
+        <div class="home-bottom">
+          <p id="mode-info" class="mode-info"></p>
+          <nav class="modes" role="tablist" aria-label="Game mode">
+            <button class="mode" data-mode="classic" role="tab">Classic</button>
+            <button class="mode" data-mode="daily" role="tab">Daily<i class="dot"></i></button>
+            <button class="mode" data-mode="zen" role="tab">Zen</button>
+          </nav>
+          <nav class="dock">
+            <button id="btn-skins" class="dock-btn" data-icon="palette"><span>Skins</span><i class="badge"></i></button>
+            <button id="btn-missions" class="dock-btn" data-icon="target"><span>Missions</span><i class="badge"></i></button>
+            <button id="btn-gift" class="dock-btn" data-icon="gift"><span>Gift</span><i class="badge"></i></button>
+          </nav>
+        </div>
+      </section>
+
+      <!-- IN-GAME -->
+      <section id="hud" class="screen">
+        <button id="btn-pause" class="icon-btn pause-btn" data-icon="pause" aria-label="Pause"></button>
+      </section>
+
+      <!-- READY (after "Play again") -->
+      <section id="readybar" class="screen">
+        <button id="btn-back" class="icon-btn pause-btn" data-icon="home" aria-label="Home"></button>
+      </section>
+
+      <!-- PAUSE -->
+      <section id="pause" class="modal screen">
+        <div class="card">
+          <h2 class="card-title">Paused</h2>
+          <p id="pause-sub" class="card-sub"></p>
+          <button id="btn-resume" class="btn primary wide" data-icon="play"><span>Resume</span></button>
+          <button id="btn-finish" class="btn wide" data-icon="flag"><span>Finish session</span></button>
+          <div class="row">
+            <button id="btn-restart" class="btn" data-icon="replay"><span>Restart</span></button>
+            <button id="btn-quit" class="btn" data-icon="home"><span>Home</span></button>
+          </div>
+          <div class="row mini">
+            <button id="pause-music" class="icon-btn toggle" data-icon="music" aria-label="Music"></button>
+            <button id="pause-sfx" class="icon-btn toggle" data-icon="sound" aria-label="Sound effects"></button>
+            <button id="pause-haptics" class="icon-btn toggle" data-icon="vibrate" aria-label="Haptics"></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECOND CHANCE -->
+      <section id="revive" class="modal screen">
+        <div class="card revive-card">
+          <h2 class="card-title">Keep going?</h2>
+          <p class="card-sub">One second chance per run</p>
+          <div class="revive-timer">
+            <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" class="track" /><circle cx="50" cy="50" r="44" class="bar" id="revive-bar" /></svg>
+            <b id="revive-score">0</b>
+          </div>
+          <button id="btn-revive" class="btn primary wide"><span>Continue</span><i class="coin"></i><b id="revive-cost">50</b></button>
+          <button id="btn-norevive" class="btn ghost wide">No thanks</button>
+        </div>
+      </section>
+
+      <!-- RESULTS -->
+      <section id="results" class="modal screen">
+        <div class="card results-card">
+          <p id="res-kicker" class="res-kicker">GAME OVER</p>
+          <p id="res-cause" class="res-cause"></p>
+          <div id="res-score" class="res-score">0</div>
+          <p id="res-best" class="res-best"></p>
+          <p id="res-nudge" class="res-nudge"></p>
+          <div class="res-stats">
+            <div><b id="st-pops">0</b><span>pops</span></div>
+            <div><b id="st-perfect">0%</b><span>perfect</span></div>
+            <div><b id="st-mult">×1</b><span>top combo</span></div>
+          </div>
+          <div class="res-coins"><i class="coin"></i><b id="res-coins">+0</b></div>
+          <ul id="res-missions" class="res-missions"></ul>
+          <button id="btn-again" class="btn primary wide big" data-icon="replay"><span>Play again</span></button>
+          <div class="row">
+            <button id="btn-share" class="btn" data-icon="share"><span>Share</span></button>
+            <button id="btn-home" class="btn" data-icon="home"><span>Home</span></button>
+          </div>
+        </div>
+      </section>
+
+      <div id="scrim" class="scrim"></div>
+
+      <!-- SKINS -->
+      <section id="sheet-skins" class="sheet" aria-label="Skins">
+        <header class="sheet-head">
+          <h2>Skins</h2>
+          <span class="pill small"><i class="coin"></i><b class="coins-val">0</b></span>
+          <button class="icon-btn close" data-icon="close" data-close aria-label="Close"></button>
+        </header>
+        <p class="sheet-hint">Tap to preview · every skin has its own sound</p>
+        <div id="skin-grid" class="skin-grid"></div>
+      </section>
+
+      <!-- MISSIONS -->
+      <section id="sheet-missions" class="sheet" aria-label="Missions">
+        <header class="sheet-head">
+          <h2>Missions</h2>
+          <span class="pill small"><i class="coin"></i><b class="coins-val">0</b></span>
+          <button class="icon-btn close" data-icon="close" data-close aria-label="Close"></button>
+        </header>
+        <div id="gift-card" class="gift-card"></div>
+        <ul id="mission-list" class="mission-list"></ul>
+        <h3 class="sheet-sub">Your stats</h3>
+        <div id="stat-grid" class="stat-grid"></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="sheet-settings" class="sheet" aria-label="Settings">
+        <header class="sheet-head">
+          <h2>Settings</h2>
+          <button class="icon-btn close" data-icon="close" data-close aria-label="Close"></button>
+        </header>
+        <div class="settings-list">
+          <label class="set-row"><i data-icon="music"></i><span>Music</span><input type="checkbox" id="set-music" class="switch" /></label>
+          <label class="set-row"><i data-icon="sound"></i><span>Sound effects</span><input type="checkbox" id="set-sfx" class="switch" /></label>
+          <label class="set-row"><i data-icon="vibrate"></i><span>Haptics</span><input type="checkbox" id="set-haptics" class="switch" /></label>
+          <label class="set-row"><i data-icon="motion"></i><span>Reduce motion</span><input type="checkbox" id="set-calm" class="switch" /></label>
+        </div>
+        <button id="btn-howto" class="btn wide" data-icon="help"><span>How to play</span></button>
+        <button id="btn-reset" class="btn ghost wide danger"><span>Reset progress</span></button>
+        <p id="credits" class="credits"></p>
+      </section>
+
+      <!-- HOW TO PLAY -->
+      <section id="howto" class="modal screen">
+        <div class="card howto-card">
+          <h2 class="card-title">How to play</h2>
+          <ul class="howto-list">
+            <li><canvas data-demo="ring" width="120" height="120"></canvas><p><b>Tap the circle</b> before its ring runs out. Tap anywhere else and it's over.</p></li>
+            <li><canvas data-demo="perfect" width="120" height="120"></canvas><p><b>Hit the center</b> for PERFECT. Chain them to stack a ×8 multiplier.</p></li>
+            <li><canvas data-demo="fever" width="120" height="120"></canvas><p><b>Fill FEVER</b> with perfects, then pop everything for double points.</p></li>
+            <li><canvas data-demo="bomb" width="120" height="120"></canvas><p><b>Never tap bombs.</b> Gold circles pay 5× and drop coins.</p></li>
+            <li><canvas data-demo="power" width="120" height="120"></canvas><p><b>Grab power-ups:</b> Shield saves you once, Slow-mo and Double.</p></li>
+          </ul>
+          <button id="btn-howto-ok" class="btn primary wide"><span>Let's pop</span></button>
+        </div>
+      </section>
+
+      <div id="toasts" aria-live="polite"></div>
+    </div>
+
+    <div id="boot"><div class="boot-ring"></div></div>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
