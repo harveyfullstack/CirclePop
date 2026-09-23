@@ -313,7 +313,10 @@ svg {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  padding: 0.06em 0;
+  /* background-clip: text only paints inside the box, and the negative letter-spacing makes the box
+     narrower than the last glyph — pad it out (and pull the margins back) so nothing gets shaved off. */
+  padding: 0.06em 0.1em;
+  margin: 0 -0.1em;
 }
 
 .logo-text:first-child {
