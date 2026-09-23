@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.vite/
+# Native projects are generated with `npx cap add ios|android`; commit them once you create them.
