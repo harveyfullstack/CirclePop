@@ -58,11 +58,12 @@ export class Background {
   }
 
   resize(w: number, h: number): void {
+    const changed = w !== this.w || h !== this.h;
     this.w = w;
     this.h = h;
     this.grad = null;
     this.vig = null;
-    this.seedMotes();
+    if (changed) this.seedMotes();
   }
 
   private seedMotes(): void {

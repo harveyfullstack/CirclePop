@@ -224,11 +224,15 @@ export class UI {
     ($('btn-revive') as HTMLButtonElement).disabled = !affordable;
     this.show($('revive'), true);
     const bar = $('revive-bar');
-    const start = performance.now();
     const total = 276.5;
+    let prev = performance.now();
+    let elapsed = 0;
     cancelAnimationFrame(this.reviveRaf);
     const step = (now: number): void => {
-      const k = Math.min(1, (now - start) / (seconds * 1000));
+      // Clamped per-frame delta: time spent in another app does not count down the offer.
+      elapsed += Math.min(100, Math.max(0, now - prev));
+      prev = now;
+      const k = Math.min(1, elapsed / (seconds * 1000));
       bar.style.strokeDashoffset = String(total * k);
       if (k >= 1) {
         this.h.onDecline();

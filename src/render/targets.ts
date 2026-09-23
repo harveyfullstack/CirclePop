@@ -1,4 +1,4 @@
-import { hsl, rgba } from '../core/color';
+import { hsl, rainbow, rgba } from '../core/color';
 import { easeOutBack, TAU } from '../core/math';
 import { PERFECT_FRAC } from '../game/difficulty';
 import { DIE_TIME } from '../game/session';
@@ -23,7 +23,7 @@ function targetColors(t: Target, skin: Skin, time: number): [string, string] {
   if (t.kind === 'gold') return skin.light ? [GOLD.b, '#E07B00'] : [GOLD.a, GOLD.b];
   if (skin.rainbow) {
     const h = time * 90 + t.seed * 57;
-    return [hsl(h, 100, 62), hsl(h + 140, 100, 62)];
+    return [rainbow(h), rainbow(h + 140)];
   }
   return [skin.a, skin.b];
 }

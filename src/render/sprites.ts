@@ -17,6 +17,13 @@ const glowCache = new Map<string, HTMLCanvasElement>();
 const ringCache = new Map<string, HTMLCanvasElement>();
 const blobCache = new Map<string, HTMLCanvasElement>();
 const pixelCache = new Map<string, HTMLCanvasElement>();
+const CACHE_LIMIT = 96;
+
+/** Callers pass palette colours, but never let a stray dynamic colour grow a cache without bound. */
+function remember(cache: Map<string, HTMLCanvasElement>, key: string, c: HTMLCanvasElement): void {
+  if (cache.size >= CACHE_LIMIT) cache.clear();
+  cache.set(key, c);
+}
 
 /** Soft dot with a hot center. Draw it at 2 × radius. */
 export function glowSprite(color: string): HTMLCanvasElement {
@@ -31,7 +38,7 @@ export function glowSprite(color: string): HTMLCanvasElement {
     grad.addColorStop(1, rgba(color, 0));
     g.fillStyle = grad;
     g.fillRect(0, 0, 64, 64);
-    glowCache.set(color, c);
+    remember(glowCache, color, c);
   }
   return c;
 }
@@ -53,7 +60,7 @@ export function ringGlowSprite(color: string): HTMLCanvasElement {
     grad.addColorStop(1, rgba(color, 0));
     g.fillStyle = grad;
     g.fillRect(0, 0, 160, 160);
-    ringCache.set(color, c);
+    remember(ringCache, color, c);
   }
   return c;
 }
@@ -70,7 +77,7 @@ export function blobSprite(color: string): HTMLCanvasElement {
     grad.addColorStop(1, rgba(color, 0));
     g.fillStyle = grad;
     g.fillRect(0, 0, 256, 256);
-    blobCache.set(color, c);
+    remember(blobCache, color, c);
   }
   return c;
 }
@@ -100,7 +107,7 @@ export function pixelRingSprite(a: string, b: string): HTMLCanvasElement {
         }
       }
     }
-    pixelCache.set(key, c);
+    remember(pixelCache, key, c);
   }
   return c;
 }

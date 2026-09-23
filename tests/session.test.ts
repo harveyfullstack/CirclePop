@@ -84,9 +84,11 @@ describe('Session basics', () => {
 });
 
 describe('Fever', () => {
-  it('triggers after ten perfects, doubles targets, forgives misses, then ends', () => {
-    const { s, events } = make({ tuning: { ...D.BASE_TUNING, bombStart: 999, powerRate: 0 } });
-    for (let i = 0; i < 10; i++) popMain(s);
+  it('triggers after exactly ten perfects, doubles targets, forgives misses, then ends', () => {
+    const { s, events } = make({ tuning: { ...D.BASE_TUNING, bombStart: 999, powerRate: 0, goldRate: 0 } });
+    for (let i = 0; i < 9; i++) popMain(s);
+    expect(s.feverActive).toBe(false);
+    popMain(s);
     expect(events.some((e) => e.type === 'feverStart')).toBe(true);
     expect(s.feverActive).toBe(true);
     expect(mains(s).length).toBe(2);
@@ -102,6 +104,52 @@ describe('Fever', () => {
     expect(mains(s).length).toBe(1);
     expect(s.state).toBe('playing');
   });
+
+  it('ends fairly: tapping the circle that just vanished is not a death', () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const { s } = make({ seed, tuning: { ...D.BASE_TUNING, bombStart: 999, powerRate: 0, goldRate: 0 } });
+      for (let i = 0; i < 10; i++) popMain(s);
+      expect(s.feverActive).toBe(true);
+      for (let i = 0; i < Math.ceil(D.FEVER_DURATION * 60) + 2 && s.feverActive; i++) s.update(1 / 60);
+      const retired = s.targets.find((t) => t.main && t.dying > 0);
+      expect(retired).toBeDefined();
+      s.tap(retired!.x, retired!.y);
+      expect(s.state).toBe('playing');
+      s.update(0.3);
+      s.tap(1, 1); // still inside the post-FEVER grace window
+      expect(s.state).toBe('playing');
+      s.update(0.5);
+      s.tap(1, 1);
+      expect(s.state).toBe('dead');
+    }
+  });
+});
+
+describe('Forgiveness', () => {
+  it('an accidental double tap on the circle just popped is not a miss', () => {
+    const { s } = make();
+    popMain(s);
+    const t = mains(s)[0];
+    s.tap(t.x, t.y);
+    s.update(0.05);
+    s.tap(t.x + 3, t.y - 2); // the same finger bouncing
+    expect(s.state).toBe('playing');
+    s.update(0.3);
+    s.tap(t.x, t.y); // much later, that spot is empty: a real miss
+    expect(s.state).toBe('dead');
+  });
+
+  it('tapping a bomb or power-up while it fades out is harmless', () => {
+    const { s } = make({ tuning: { ...D.BASE_TUNING, bombStart: 0, bombRate: 3 } });
+    popMain(s);
+    let guard = 0;
+    while (bombs(s).length === 0 && guard++ < 50) popMain(s);
+    const b = bombs(s)[0];
+    popMain(s); // retires the bomb
+    expect(b.dying).toBeGreaterThan(0);
+    s.tap(b.x, b.y);
+    expect(s.state).toBe('playing');
+  });
 });
 
 describe('Hazards', () => {
@@ -110,9 +158,12 @@ describe('Hazards', () => {
       const { s } = make({ seed, tuning: { ...D.BASE_TUNING, bombStart: 0, bombRate: 3 } });
       let lastX = s.field.cx;
       let lastY = s.field.cy;
-      for (let i = 0; i < 60 && s.state === 'playing' || i === 0; i++) {
-        const t = popMain(s);
-        lastX = t.x;
+      for (let i = 0; (i < 60 && s.state === 'playing') || i === 0; i++) {
+        // Off-centre taps: the finger is not where the circle's centre was.
+        const t = mains(s)[0];
+        const ox = (i % 3 === 0 ? 1 : -1) * t.r * 0.9;
+        s.tap(t.x + ox, t.y);
+        lastX = t.x + ox;
         lastY = t.y;
         const main = mains(s)[0];
         for (const b of bombs(s)) {

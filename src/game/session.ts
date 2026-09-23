@@ -46,6 +46,8 @@ export class Session {
   /** Decides what spawns (kept separate from positions so screen size can't change the sequence). */
   private readonly rngType: Rng;
   private readonly rngPos: Rng;
+  /** FEVER has its own stream: how long you stay in FEVER must not reshuffle the daily's later waves. */
+  private readonly rngFever: Rng;
   private nextId = 1;
 
   state: SessionState = 'ready';
@@ -67,6 +69,10 @@ export class Session {
   timeMax = 1;
   /** After a revive the timer waits for the next pop. */
   grace = false;
+  /** Seconds during which misses are forgiven (just after FEVER ends). */
+  missGrace = 0;
+  /** Where the last pop happened, so an accidental second tap on it is not a miss. */
+  private recentPop = { x: 0, y: 0, r: 0, t: -1 };
   shield = false;
   slowTime = 0;
   doubleTime = 0;
@@ -90,6 +96,7 @@ export class Session {
     this.emit = emit;
     this.rngType = mulberry32(cfg.seed);
     this.rngPos = mulberry32((cfg.seed ^ 0x9e3779b9) >>> 0);
+    this.rngFever = mulberry32((cfg.seed ^ 0x85ebca6b) >>> 0);
     this.lastX = field.cx;
     this.lastY = field.cy;
     this.addTarget('normal', field.cx, field.cy, D.READY_RADIUS * field.u, true);
@@ -120,10 +127,22 @@ export class Session {
       }
       return;
     }
-    if (!hit) this.onMiss(x, y);
-    else if (hit.kind === 'bomb') this.onBomb(hit);
+    if (!hit) {
+      if (!this.forgivable(x, y)) this.onMiss(x, y);
+    } else if (hit.kind === 'bomb') this.onBomb(hit);
     else if (hit.kind === 'power') this.collectPower(hit);
     else this.popTarget(hit, x, y);
+  }
+
+  /** A tap on something that is fading away, or a double tap on the circle just popped, is not a miss. */
+  private forgivable(x: number, y: number): boolean {
+    const u = this.field.u;
+    const rp = this.recentPop;
+    if (rp.t >= 0 && this.elapsed - rp.t < 0.18 && dist(x, y, rp.x, rp.y) <= rp.r * 1.2 + 6 * u) return true;
+    for (const t of this.targets) {
+      if (t.dying > 0 && dist(x, y, t.x, t.y) <= Math.max(t.r, hitRadius(t, u))) return true;
+    }
+    return false;
   }
 
   /** Poppable targets win over power-ups, which win over bombs. */
@@ -190,6 +209,7 @@ export class Session {
     }
     if (!playing) return;
     this.elapsed += dt;
+    if (this.missGrace > 0) this.missGrace = Math.max(0, this.missGrace - dt);
     if (this.slowTime > 0) this.slowTime = Math.max(0, this.slowTime - dt);
     if (this.doubleTime > 0) this.doubleTime = Math.max(0, this.doubleTime - dt);
     if (this.feverTime > 0) {
@@ -301,8 +321,10 @@ export class Session {
     }
     this.history += gold ? 'o' : perfect ? 'p' : 'g';
     this.grace = false;
-    this.lastX = t.x;
-    this.lastY = t.y;
+    // Where the finger actually is: new bombs keep clear of it.
+    this.lastX = tapX;
+    this.lastY = tapY;
+    this.recentPop = { x: t.x, y: t.y, r: t.r, t: this.elapsed };
     this.removeTarget(t);
 
     this.emit({ type: 'pop', target: t, quality, points, mult, streak: this.streak, tapX, tapY, fever });
@@ -314,21 +336,24 @@ export class Session {
 
     let feverNow = false;
     if (this.rules.fever && !fever) {
-      this.feverMeter = Math.min(1, this.feverMeter + D.feverGain(gold ? 'gold' : quality));
-      feverNow = this.feverMeter >= 1;
+      // Epsilon: ten gains of 0.1 sum to 0.9999999999999999.
+      this.feverMeter = Math.min(1, this.feverMeter + D.feverGain(gold ? 'gold' : quality) + 1e-9);
+      feverNow = this.feverMeter >= 1 - 1e-6;
     }
-    if (feverNow) this.startFever(t.x, t.y);
-    else if (this.feverActive) this.spawnFeverTarget(t.x, t.y);
-    else if (t.main) this.spawnWave(t.x, t.y);
+    if (feverNow) this.startFever(tapX, tapY);
+    else if (this.feverActive) this.spawnFeverTarget(tapX, tapY);
+    else if (t.main) this.spawnWave(tapX, tapY);
   }
 
   private onMiss(x: number, y: number): void {
-    if (this.feverActive || !this.rules.missKills) {
-      if (!this.feverActive && this.streak > 0) {
-        if (this.streak >= 3) this.emit({ type: 'streakLost', streak: this.streak });
-        this.streak = 0;
-        this.mult = 1;
-      }
+    if (this.feverActive || this.missGrace > 0) {
+      this.emit({ type: 'miss', x, y });
+      return;
+    }
+    if (!this.rules.missKills) {
+      if (this.streak >= 3) this.emit({ type: 'streakLost', streak: this.streak });
+      this.streak = 0;
+      this.mult = 1;
       this.emit({ type: 'miss', x, y });
       return;
     }
@@ -392,7 +417,10 @@ export class Session {
   private endFever(): void {
     this.feverTime = 0;
     this.feverMeter = 0;
-    const mains = this.targets.filter((t) => t.main && !t.dying).sort((a, b) => b.id - a.id);
+    // A finger may already be on its way to the circle that disappears: forgive misses briefly.
+    this.missGrace = 0.5;
+    // Keep the circle that has been on screen longest; it is the one most likely being reached for.
+    const mains = this.targets.filter((t) => t.main && !t.dying).sort((a, b) => a.id - b.id);
     for (let i = 1; i < mains.length; i++) mains[i].dying = 1e-6;
     if (mains.length) this.setTimer(this.lastX, this.lastY, mains[0].x, mains[0].y, false, mains[0].kind === 'gold');
     else this.spawnWave(this.lastX, this.lastY);
@@ -401,9 +429,9 @@ export class Session {
 
   private spawnFeverTarget(fromX: number, fromY: number): void {
     const u = this.field.u;
-    const gold = this.rngType() < 0.12;
+    const gold = this.rngFever() < 0.12;
     const r = D.targetRadius(this.pops) * this.tuning.sizeScale * u * (gold ? 0.9 : 1);
-    const [x, y] = this.findSpot(r * 1.2 + 6 * u, fromX, fromY, r * 2.2);
+    const [x, y] = this.findSpot(r * 1.2 + 6 * u, fromX, fromY, r * 2.2, this.rngFever);
     this.addTarget(gold ? 'gold' : 'normal', x, y, r, true);
   }
 
@@ -505,10 +533,9 @@ export class Session {
   }
 
   /** Random point for a circle with hit radius `hr`, away from `from` and every live target. */
-  private findSpot(hr: number, fromX: number, fromY: number, minFrom: number): [number, number] {
+  private findSpot(hr: number, fromX: number, fromY: number, minFrom: number, rng: Rng = this.rngPos): [number, number] {
     const f = this.field;
     const u = f.u;
-    const rng = this.rngPos;
     const m = hr + 4 * u;
     const x0 = f.left + m;
     const x1 = Math.max(x0, f.right - m);

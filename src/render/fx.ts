@@ -1,4 +1,4 @@
-import { hsl } from '../core/color';
+import { rainbow } from '../core/color';
 import { TAU } from '../core/math';
 import { DANGER, GOLD } from '../meta/skins';
 import type { Floaters, FloaterOpts } from './floaters';
@@ -71,7 +71,7 @@ export class Fx {
     }
     if (fever) {
       const hue = Math.random() * 360;
-      this.burst(x, y, 10, [hsl(hue, 100, 65), hsl(hue + 120, 100, 65), hsl(hue + 240, 100, 65)], [200, 620], [4, 9], [0.4, 0.8], { drag: 2.5 });
+      this.burst(x, y, 10, [rainbow(hue, 65), rainbow(hue + 120, 65), rainbow(hue + 240, 65)], [200, 620], [4, 9], [0.4, 0.8], { drag: 2.5 });
     }
     this.shake.add(perfect ? 0.07 : 0.03);
   }
@@ -122,8 +122,8 @@ export class Fx {
     const u = this.u;
     const cx = w / 2;
     const cy = h * 0.46;
-    for (let i = 0; i < 3; i++) this.ring(cx, cy, 10 * u, Math.max(w, h) * (0.4 + i * 0.2), hsl(i * 120, 100, 65), 0.6 + i * 0.15, (14 - i * 3) * u);
-    const cols = [0, 50, 120, 190, 270, 320].map((hh) => hsl(hh, 100, 65));
+    for (let i = 0; i < 3; i++) this.ring(cx, cy, 10 * u, Math.max(w, h) * (0.4 + i * 0.2), rainbow(i * 120, 65), 0.6 + i * 0.15, (14 - i * 3) * u);
+    const cols = [0, 50, 120, 190, 270, 320].map((hh) => rainbow(hh, 65));
     this.burst(cx, cy, 60, cols, [300, 1100], [6, 14], [0.6, 1.2], { drag: 2 });
     this.shake.add(0.55);
   }

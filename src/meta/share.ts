@@ -195,6 +195,8 @@ export async function shareRun(blob: Blob | null, text: string, url: string): Pr
     }
     return copied ? 'copied' : 'downloaded';
   } catch (e) {
-    return (e as { name?: string })?.name === 'AbortError' ? 'cancelled' : 'failed';
+    // Web Share rejects with AbortError; Capacitor's Share plugin rejects with "Share canceled".
+    const err = e as { name?: string; message?: string };
+    return err?.name === 'AbortError' || /cancel/i.test(String(err?.message ?? '')) ? 'cancelled' : 'failed';
   }
 }

@@ -15,9 +15,12 @@ async function loadFonts(): Promise<void> {
 
 function registerServiceWorker(): void {
   if (!import.meta.env.PROD || isNative || !('serviceWorker' in navigator) || location.protocol !== 'https:') return;
-  window.addEventListener('load', () => {
+  const register = (): void => {
     navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => undefined);
-  });
+  };
+  // boot() awaits fonts and the save first, so `load` has usually fired already.
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
 }
 
 async function boot(): Promise<void> {

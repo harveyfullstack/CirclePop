@@ -2,7 +2,7 @@ import { AudioEngine } from './audio/engine';
 import { Music } from './audio/music';
 import { Sfx } from './audio/sfx';
 import { shareUrl, VERSION } from './config';
-import { hsl } from './core/color';
+import { hsl, rainbow } from './core/color';
 import { clamp, damp } from './core/math';
 import { READY_RADIUS } from './game/difficulty';
 import { Session } from './game/session';
@@ -102,6 +102,9 @@ export class App {
   private dprCap = 3;
   private frameAcc = 0;
   private frameN = 0;
+  /** Frames that look like a steady 30 fps display cap (e.g. iOS Low Power Mode), not slowness. */
+  private frameCapped = 0;
+  private fastWindows = 0;
   private preview = '';
   private confirmSkin: string | null = null;
   private confirmT = 0;
@@ -304,18 +307,34 @@ export class App {
     v.countdownT = this.countdownT;
   }
 
+  /** Trade resolution for frame rate on slow devices, and win it back when things speed up. */
   private adaptQuality(dt: number): void {
-    if (document.hidden) return;
+    if (document.hidden || dt <= 0) return;
     this.frameAcc += dt;
     this.frameN++;
+    if (Math.abs(dt - 1 / 30) < 0.003) this.frameCapped++;
     if (this.frameAcc < 2.5) return;
     const avg = this.frameAcc / this.frameN;
+    const capped = this.frameCapped / this.frameN > 0.8;
     this.frameAcc = 0;
     this.frameN = 0;
-    const current = Math.min(this.dprCap, window.devicePixelRatio || 1);
-    if (avg > 0.026 && current > 1.25) {
-      this.dprCap = Math.max(1.25, current - 0.5);
+    this.frameCapped = 0;
+    const device = window.devicePixelRatio || 1;
+    const current = Math.min(this.dprCap, device);
+    // A locked 30 fps is a display cap: dropping resolution would not buy frames, so keep it sharp.
+    const floor = capped ? Math.min(2, device) : 1.25;
+    if (avg > 0.026 && current > floor) {
+      this.dprCap = Math.max(floor, current - 0.5);
+      this.fastWindows = 0;
       this.resize();
+    } else if (avg < 0.0185 && this.dprCap < device) {
+      if (++this.fastWindows >= 2) {
+        this.dprCap = Math.min(3, this.dprCap + 0.5);
+        this.fastWindows = 0;
+        this.resize();
+      }
+    } else {
+      this.fastWindows = 0;
     }
   }
 
@@ -616,7 +635,7 @@ export class App {
   private popColors(): readonly string[] {
     if (this.viewSkin.rainbow) {
       const h = Math.random() * 360;
-      return [hsl(h, 100, 65), hsl(h + 90, 100, 65), '#FFFFFF', hsl(h + 200, 100, 65)];
+      return [rainbow(h, 65), rainbow(h + 90, 65), '#FFFFFF', rainbow(h + 200, 65)];
     }
     return this.viewSkin.particles;
   }
@@ -871,6 +890,11 @@ export class App {
   }
 
   private onHidden(): void {
+    if (this.phase === 'paused' && this.countdown > 0) {
+      // Left mid "3-2-1": come back to the pause card, not a surprise resume.
+      this.countdown = 0;
+      this.ui.showPause(true, this.session.mode === 'zen');
+    }
     this.pause();
     this.audio.suspend();
     this.store.flush();
@@ -882,6 +906,8 @@ export class App {
   }
 
   private back(): boolean {
+    // Never quit mid death-animation: the run has not been banked yet.
+    if (this.phase === 'dying') return true;
     if (this.ui.howtoOpen) {
       this.howto(false);
       return true;
